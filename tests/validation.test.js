@@ -50,6 +50,21 @@ describe("auth validators", () => {
       })
     ).toThrow(/Validation failed/);
   });
+
+  it("rejects passwords longer than 72 bytes", () => {
+    const longAscii = "a".repeat(73);
+    expect(() => validate(registerSchema, { fullName: "Ada", email: "a@b.com", password: longAscii })).toThrow(ApiError);
+    expect(() => validate(loginSchema, { email: "a@b.com", password: longAscii })).toThrow(ApiError);
+  });
+
+  it("accepts passwords at the 72-byte boundary", () => {
+    const atBoundary = "b".repeat(72);
+    expect(() => validate(registerSchema, { fullName: "Ada", email: "a@b.com", password: atBoundary })).not.toThrow();
+  });
+
+  it("rejects a short password on register", () => {
+    expect(() => validate(registerSchema, { fullName: "Ada", email: "a@b.com", password: "short" })).toThrow(ApiError);
+  });
 });
 
 describe("profile validator", () => {
@@ -60,5 +75,10 @@ describe("profile validator", () => {
     });
     expect(data.bio).toBeNull();
     expect(data.skills).toHaveLength(4);
+  });
+
+  it("accepts null skills to clear them", () => {
+    const data = validate(updateProfileSchema, { skills: null });
+    expect(data.skills).toBeNull();
   });
 });

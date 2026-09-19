@@ -32,6 +32,14 @@ describe("rateLimit", () => {
     expect(rateLimit(b, { windowMs: 60_000, max: 1 })).toBeNull();
   });
 
+  it("ignores non-IP forwarded keys and shares the fallback bucket", () => {
+    const garbage = makeRequest("not-an-ip");
+    const garbage2 = makeRequest("also-not-an-ip");
+    rateLimit(garbage, { windowMs: 60_000, max: 1 });
+    expect(rateLimit(garbage, { windowMs: 60_000, max: 1 })).not.toBeNull();
+    expect(rateLimit(garbage2, { windowMs: 60_000, max: 1 })).not.toBeNull();
+  });
+
   it("resets after the window elapses", () => {
     const request = makeRequest("5.5.5.5");
     rateLimit(request, { windowMs: -1, max: 1 });

@@ -14,6 +14,11 @@ export const turso = createClient({
 
 if (isLocalFile) {
   // SQLite disables foreign key enforcement by default. With concurrency: 1
-  // the pragma stays active for every query on the shared connection.
-  turso.execute("PRAGMA foreign_keys = ON");
+  // the pragma stays active for every query on the shared connection. This
+  // execute is intentionally fire-and-forget: it is enqueued on the single
+  // connection before any later query, so ordering is preserved. We attach a
+  // handler so a theoretical failure never becomes an unhandled rejection.
+  turso.execute("PRAGMA foreign_keys = ON").catch((error) => {
+    console.error("Failed to enable foreign key enforcement:", error);
+  });
 }

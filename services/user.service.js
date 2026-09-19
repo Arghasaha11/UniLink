@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { profiles, skills, userSkills, users } from "@/db/schema";
 import { ApiError } from "@/lib/api-error";
@@ -108,7 +108,7 @@ export async function updateOwnProfile(userId, data) {
 
     if (data.skills !== undefined) {
       await tx.delete(userSkills).where(eq(userSkills.userId, userId));
-      const normalized = data.skills.map((n) => n.trim()).filter(Boolean);
+      const normalized = (data.skills ?? []).map((n) => n.trim()).filter(Boolean);
       const seen = new Map();
       for (const name of normalized) {
         const key = name.toLowerCase();
@@ -139,15 +139,44 @@ async function ensureSkill(client, name) {
   if (existing) {
     return existing.id;
   }
-  const [created] = await client.insert(skills).values({ name: trimmed }).returning();
-  return created.id;
+  // Two concurrent profile updates can race to create the same new skill.
+  // onConflictDoNothing turns the losing insert into a no-op instead of a
+  // raw unique-constraint error; we then resolve the winning row's id.
+  const [created] = await client
+    .insert(skills)
+    .values({ name: trimmed })
+    .onConflictDoNothing()
+    .returning();
+  if (created) {
+    return created.id;
+  }
+  const [winner] = await client
+    .select({ id: skills.id })
+    .from(skills)
+    .where(sql`lower(${skills.name}) = ${lowerName}`)
+    .limit(1);
+  return winner.id;
+}
+
+function escapeLike(input) {
+  // Escape LIKE wildcards (% and _) and the escape character itself so user
+  // input is matched literally instead of acting as a pattern.
+  return input.replace(/[\\%_]/g, (match) => `\\${match}`);
+}
+
+function likeCondition(column, value) {
+  const pattern = `%${escapeLike(value)}%`;
+  return sql`${column} like ${pattern} escape '\\'`;
 }
 
 export async function searchUsers({ query, page, limit }) {
   const conditions = [];
   if (query) {
     conditions.push(
-      or(like(users.fullName, `%${query}%`), like(profiles.department, `%${query}%`))
+      or(
+        likeCondition(users.fullName, query),
+        likeCondition(profiles.department, query)
+      )
     );
   }
   const where = conditions.length ? and(...conditions) : undefined;

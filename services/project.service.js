@@ -4,7 +4,7 @@ import { projectJoinRequests, projectMembers, projects } from "@/db/schema";
 import { ApiError } from "@/lib/api-error";
 import { toPublicUser } from "./user.service";
 
-function getProjectById(id) {
+function getProjectById(id, { includeJoinRequests = false } = {}) {
   return db.query.projects.findFirst({
     where: (p, { eq }) => eq(p.id, id),
     with: {
@@ -14,12 +14,16 @@ function getProjectById(id) {
           user: { with: { profile: true, skills: { with: { skill: true } } } },
         },
       },
-      joinRequests: {
-        where: (jr, { eq }) => eq(jr.status, "pending"),
-        with: {
-          user: { with: { profile: true, skills: { with: { skill: true } } } },
-        },
-      },
+      ...(includeJoinRequests
+        ? {
+            joinRequests: {
+              where: (jr, { eq }) => eq(jr.status, "pending"),
+              with: {
+                user: { with: { profile: true, skills: { with: { skill: true } } } },
+              },
+            },
+          }
+        : {}),
     },
   });
 }
@@ -42,12 +46,16 @@ export function toPublicProject(project) {
     owner: toPublicUser({ ...project.owner }),
     memberCount: project.members.length,
     members: (project.members ?? []).map(serializeMember),
-    joinRequests: (project.joinRequests ?? []).map((jr) => ({
-      id: jr.id,
-      status: jr.status,
-      createdAt: jr.createdAt,
-      user: toPublicUser({ ...jr.user }),
-    })),
+    ...(project.joinRequests !== undefined
+      ? {
+          joinRequests: (project.joinRequests ?? []).map((jr) => ({
+            id: jr.id,
+            status: jr.status,
+            createdAt: jr.createdAt,
+            user: toPublicUser({ ...jr.user }),
+          })),
+        }
+      : {}),
   };
 }
 
@@ -62,8 +70,8 @@ function toPublicJoinRequest(row) {
   };
 }
 
-export async function getPublicProject(id) {
-  const project = await getProjectById(id);
+export async function getPublicProject(id, { includeJoinRequests = false } = {}) {
+  const project = await getProjectById(id, { includeJoinRequests });
   if (!project) {
     throw new ApiError(404, "Project not found", "NOT_FOUND");
   }
@@ -141,7 +149,7 @@ export async function updateProject(projectId, ownerId, data) {
     .where(eq(projects.id, projectId))
     .run();
 
-  return getPublicProject(projectId);
+  return getPublicProject(projectId, { includeJoinRequests: true });
 }
 
 export async function deleteProject(projectId, ownerId) {
@@ -174,7 +182,7 @@ export async function addProjectMember(projectId, ownerId, userId) {
   }
 
   await db.insert(projectMembers).values({ projectId, userId, role: "member" }).run();
-  return getPublicProject(projectId);
+  return getPublicProject(projectId, { includeJoinRequests: true });
 }
 
 export async function removeProjectMember(projectId, ownerId, userId) {
@@ -192,7 +200,7 @@ export async function removeProjectMember(projectId, ownerId, userId) {
     throw new ApiError(404, "This user is not a project member", "NOT_FOUND");
   }
 
-  return getPublicProject(projectId);
+  return getPublicProject(projectId, { includeJoinRequests: true });
 }
 
 export async function createJoinRequest(projectId, userId) {
@@ -273,7 +281,7 @@ export async function decideJoinRequest(projectId, ownerId, requestId, action) {
       .set({ status: "rejected", updatedAt: Date.now() })
       .where(eq(projectJoinRequests.id, requestId))
       .run();
-    return getPublicProject(projectId);
+    return getPublicProject(projectId, { includeJoinRequests: true });
   }
 
   await db.transaction(async (tx) => {
@@ -289,5 +297,5 @@ export async function decideJoinRequest(projectId, ownerId, requestId, action) {
       .run();
   });
 
-  return getPublicProject(projectId);
+  return getPublicProject(projectId, { includeJoinRequests: true });
 }
