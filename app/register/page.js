@@ -1,0 +1,312 @@
+"use client";
+
+import { useState } from "react";
+import { ArrowLeft, GraduationCap, UserRound } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../context/AuthContext";
+
+export default function Register() {
+  const router = useRouter();
+  const { register } = useAuth();
+
+  const [accountType, setAccountType] = useState("student");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [department, setDepartment] = useState("");
+  const [year, setYear] = useState("");
+
+  const [graduationYear, setGraduationYear] = useState("");
+  const [currentRole, setCurrentRole] = useState("");
+  const [company, setCompany] = useState("");
+
+  const handleRegister = (event) => {
+    event.preventDefault();
+
+    const newUser = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+      department,
+      accountType,
+
+      ...(accountType === "student"
+        ? {
+            year,
+          }
+        : {
+            graduationYear,
+            currentRole: currentRole.trim(),
+            company: company.trim(),
+          }),
+    };
+
+    register(newUser);
+
+    router.push("/");
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="flex h-[60px] items-center px-[14px]">
+        <button
+          className="flex items-center justify-center"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft size={21} />
+        </button>
+      </header>
+
+      <main className="px-[22px] pt-5 pb-[60px]">
+        <div className="my-[20px] mb-[45px] text-center">
+          <h1 className="text-[30px] font-extrabold tracking-[-1px]">
+            Uni<span className="text-indigo-500">Link</span>
+          </h1>
+
+          <p className="mt-[5px] text-slate-500 text-[10px]">Ideas. People. Opportunities.</p>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-2xl">Create your account</h2>
+
+          <p className="mt-1.5 text-slate-500 text-[11px] leading-[1.5]">
+            Join your college community and start connecting.
+          </p>
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            className={`flex min-h-[78px] items-center gap-[9px] rounded-[14px] border p-3 text-left ${
+              accountType === "student"
+                ? "border-indigo-500 bg-indigo-50 text-indigo-500"
+                : "border-slate-200 bg-white text-slate-500"
+            }`}
+            onClick={() => setAccountType("student")}
+          >
+            <UserRound size={19} className="shrink-0" />
+
+            <div className="flex flex-col">
+              <strong className={`text-[11px] ${accountType === "student" ? "text-indigo-500" : "text-slate-900"}`}>Student</strong>
+              <span className="mt-[3px] text-slate-500 text-[8px] leading-[1.3]">Currently studying</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`flex min-h-[78px] items-center gap-[9px] rounded-[14px] border p-3 text-left ${
+              accountType === "alumni"
+                ? "border-indigo-500 bg-indigo-50 text-indigo-500"
+                : "border-slate-200 bg-white text-slate-500"
+            }`}
+            onClick={() => setAccountType("alumni")}
+          >
+            <GraduationCap size={19} className="shrink-0" />
+
+            <div className="flex flex-col">
+              <strong className={`text-[11px] ${accountType === "alumni" ? "text-indigo-500" : "text-slate-900"}`}>Alumni</strong>
+              <span className="mt-[3px] text-slate-500 text-[8px] leading-[1.3]">Already graduated</span>
+            </div>
+          </button>
+        </div>
+
+        <form
+          className="auth-form"
+          onSubmit={handleRegister}
+        >
+          <div className="mb-4">
+            <label className="mb-[7px] block text-[11px] font-semibold">Full Name *</label>
+
+            <div className="flex h-[46px] items-center gap-[9px] rounded-xl border border-slate-200 bg-white px-[13px] text-slate-400 focus-within:border-indigo-500 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]">
+              <input
+                className="w-full border-none bg-transparent outline-none placeholder:text-slate-400 text-slate-900 text-[12px]"
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={(event) =>
+                  setName(event.target.value)
+                }
+                required
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-[7px] block text-[11px] font-semibold">College Email *</label>
+
+            <div className="flex h-[46px] items-center gap-[9px] rounded-xl border border-slate-200 bg-white px-[13px] text-slate-400 focus-within:border-indigo-500 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]">
+              <input
+                className="w-full border-none bg-transparent outline-none placeholder:text-slate-400 text-slate-900 text-[12px]"
+                type="email"
+                placeholder="you@college.edu"
+                value={email}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
+                required
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-[7px] block text-[11px] font-semibold">Password *</label>
+
+            <div className="flex h-[46px] items-center gap-[9px] rounded-xl border border-slate-200 bg-white px-[13px] text-slate-400 focus-within:border-indigo-500 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]">
+              <input
+                className="w-full border-none bg-transparent outline-none placeholder:text-slate-400 text-slate-900 text-[12px]"
+                type="password"
+                placeholder="Create a password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
+                required
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-[7px] block text-[11px] font-semibold">Department *</label>
+
+            <select
+              className="h-[46px] w-full rounded-xl border border-slate-200 bg-white px-3 outline-none focus:border-indigo-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] text-slate-900 text-[12px]"
+              value={department}
+              onChange={(event) =>
+                setDepartment(event.target.value)
+              }
+              required
+            >
+              <option value="">Select department</option>
+              <option value="CSE">
+                Computer Science & Engineering
+              </option>
+              <option value="ECE">
+                Electronics & Communication
+              </option>
+              <option value="EE">
+                Electrical Engineering
+              </option>
+              <option value="ME">
+                Mechanical Engineering
+              </option>
+              <option value="CE">
+                Civil Engineering
+              </option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {accountType === "student" && (
+            <div className="mb-4">
+              <label className="mb-[7px] block text-[11px] font-semibold">Year *</label>
+
+              <select
+                className="h-[46px] w-full rounded-xl border border-slate-200 bg-white px-3 outline-none focus:border-indigo-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] text-slate-900 text-[12px]"
+                value={year}
+                onChange={(event) =>
+                  setYear(event.target.value)
+                }
+                required
+              >
+                <option value="">Select year</option>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
+          )}
+
+          {accountType === "alumni" && (
+            <>
+              <div className="mb-4">
+                <label className="mb-[7px] block text-[11px] font-semibold">Graduation Year *</label>
+
+                <select
+                  className="h-[46px] w-full rounded-xl border border-slate-200 bg-white px-3 outline-none focus:border-indigo-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] text-slate-900 text-[12px]"
+                  value={graduationYear}
+                  onChange={(event) =>
+                    setGraduationYear(event.target.value)
+                  }
+                  required
+                >
+                  <option value="">
+                    Select graduation year
+                  </option>
+
+                  {Array.from(
+                    { length: 15 },
+                    (_, index) => 2026 - index
+                  ).map((year) => (
+                    <option
+                      key={year}
+                      value={year}
+                    >
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-[7px] block text-[11px] font-semibold">Current Role</label>
+
+                <div className="flex h-[46px] items-center gap-[9px] rounded-xl border border-slate-200 bg-white px-[13px] text-slate-400 focus-within:border-indigo-500 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]">
+                  <input
+                    className="w-full border-none bg-transparent outline-none placeholder:text-slate-400 text-slate-900 text-[12px]"
+                    type="text"
+                    placeholder="e.g. Software Engineer"
+                    value={currentRole}
+                    onChange={(event) =>
+                      setCurrentRole(event.target.value)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-[7px] block text-[11px] font-semibold">Company / Organization</label>
+
+                <div className="flex h-[46px] items-center gap-[9px] rounded-xl border border-slate-200 bg-white px-[13px] text-slate-400 focus-within:border-indigo-500 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]">
+                  <input
+                    className="w-full border-none bg-transparent outline-none placeholder:text-slate-400 text-slate-900 text-[12px]"
+                    type="text"
+                    placeholder="e.g. Google"
+                    value={company}
+                    onChange={(event) =>
+                      setCompany(event.target.value)
+                    }
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            className="h-[46px] w-full rounded-xl bg-indigo-500 text-white text-[12px] font-semibold active:scale-[0.98]"
+          >
+            Create Account
+          </button>
+        </form>
+
+        <div className="text-center">
+          <p className="text-slate-500 text-[11px]">Already have an account?</p>
+
+          <Link className="mt-1.5 inline-block font-semibold text-indigo-500 text-[12px]" href="/login">
+            Log In
+          </Link>
+        </div>
+
+        <button
+          className="mx-auto mt-[25px] block text-slate-500 text-[10px]"
+          onClick={() => router.push("/")}
+        >
+          Continue browsing
+        </button>
+      </main>
+    </div>
+  );
+}
