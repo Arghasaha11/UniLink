@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/tests/.tmp/
 
 # next.js
 /.next/
@@ -32,6 +33,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# local sqlite fallback database
+local.db
+local.db-journal
 
 # vercel
 .vercel
